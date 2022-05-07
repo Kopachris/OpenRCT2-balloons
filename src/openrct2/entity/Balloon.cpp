@@ -62,18 +62,10 @@ void Balloon::Press()
 {
     if (popped != 1)
     {
-        // There is a random chance that pressing the balloon will not pop it
+        // There was a random chance that pressing the balloon will not pop it
         // and instead shift it slightly
-        uint32_t random = scenario_rand();
-        if ((sprite_index.ToUnderlying() & 7) || (random & 0xFFFF) < 0x2000)
-        {
-            Pop();
-        }
-        else
-        {
-            int16_t shift = ((random & 0x80000000) ? -6 : 6);
-            MoveTo({ x + shift, y, z });
-        }
+        // Not anymore! ~Kopachris
+        Pop();
     }
 }
 
