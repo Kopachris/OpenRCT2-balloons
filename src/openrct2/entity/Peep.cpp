@@ -73,6 +73,8 @@ uint32_t gNextGuestNumber;
 
 uint8_t gPeepWarningThrottle[16];
 
+std::unique_ptr<GuestPathfinding> gGuestPathfinder = std::make_unique<OriginalPathfinding>();
+
 static uint8_t _unk_F1AEF0;
 static TileElement* _peepRideEntranceExitElement;
 
@@ -1257,8 +1259,7 @@ void peep_update_crowd_noise()
         // Mute crowd noise
         if (_crowdSoundChannel != nullptr)
         {
-            Mixer_Stop_Channel(_crowdSoundChannel);
-            _crowdSoundChannel = nullptr;
+            Mixer_Channel_Volume(_crowdSoundChannel, 0);
         }
     }
     else
@@ -1274,7 +1275,8 @@ void peep_update_crowd_noise()
         // Load and play crowd noise if needed and set volume
         if (_crowdSoundChannel == nullptr)
         {
-            _crowdSoundChannel = Mixer_Play_Music(PATH_ID_CSS2, MIXER_LOOP_INFINITE, false);
+            _crowdSoundChannel = Mixer_Play_Effect(
+                OpenRCT2::Audio::SoundId::CrowdAmbience, MIXER_LOOP_INFINITE, 0, 0.5f, 1, false);
             if (_crowdSoundChannel != nullptr)
             {
                 Mixer_Channel_SetGroup(_crowdSoundChannel, OpenRCT2::Audio::MixerGroup::Sound);
@@ -2357,7 +2359,7 @@ void Peep::PerformNextAction(uint8_t& pathing_result, TileElement*& tile_result)
 
         if (guest != nullptr)
         {
-            result = guest_path_finding(guest);
+            result = gGuestPathfinder->CalculateNextDestination(*guest);
         }
         else
         {

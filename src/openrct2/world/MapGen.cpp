@@ -93,7 +93,7 @@ static constexpr const std::string_view BaseTerrain[] = {
 static void mapgen_place_trees();
 static void mapgen_set_water_level(int32_t waterLevel);
 static void mapgen_smooth_height(int32_t iterations);
-static void mapgen_set_height();
+static void mapgen_set_height(mapgen_settings* settings);
 
 static float fractal_noise(int32_t x, int32_t y, float frequency, int32_t octaves, float lacunarity, float persistence);
 static void mapgen_simplex(mapgen_settings* settings);
@@ -144,12 +144,24 @@ void mapgen_generate(mapgen_settings* settings)
     auto mapSize = settings->mapSize;
     auto waterLevel = settings->water_level;
     const auto selectedFloor = TerrainSurfaceObject::GetById(settings->floor);
-    std::string floorTexture = selectedFloor != nullptr ? std::string(selectedFloor->GetIdentifier()) : "";
+    std::string_view floorTexture = selectedFloor != nullptr ? selectedFloor->GetIdentifier() : "";
     const auto selectedEdge = TerrainEdgeObject::GetById(settings->wall);
-    std::string edgeTexture = selectedFloor != nullptr ? std::string(selectedEdge->GetIdentifier()) : "";
+    std::string_view edgeTexture = selectedFloor != nullptr ? selectedEdge->GetIdentifier() : "";
+    auto& objectManager = OpenRCT2::GetContext()->GetObjectManager();
 
     if (floorTexture.empty())
-        floorTexture = BaseTerrain[util_rand() % std::size(BaseTerrain)];
+    {
+        std::vector<std::string_view> availableTerrains;
+        std::copy_if(std::begin(BaseTerrain), std::end(BaseTerrain), std::back_inserter(availableTerrains), [&](auto terrain) {
+            return objectManager.GetLoadedObject(ObjectEntryDescriptor(terrain)) != nullptr;
+        });
+
+        if (availableTerrains.empty())
+            // Fall back to the first available surface texture that is available in the park
+            floorTexture = TerrainSurfaceObject::GetById(0)->GetIdentifier();
+        else
+            floorTexture = availableTerrains[util_rand() % availableTerrains.size()];
+    }
 
     if (edgeTexture.empty())
     {
@@ -160,10 +172,14 @@ void mapgen_generate(mapgen_settings* settings)
             edgeTexture = "rct2.terrain_edge.ice";
         else
             edgeTexture = "rct2.terrain_edge.rock";
+
+        // Fall back to the first available edge texture that is available in the park
+        if (objectManager.GetLoadedObject(ObjectEntryDescriptor(edgeTexture)) == nullptr)
+            edgeTexture = TerrainEdgeObject::GetById(0)->GetIdentifier();
     }
 
-    auto floorTextureId = object_manager_get_loaded_object_entry_index(ObjectEntryDescriptor(floorTexture));
-    auto edgeTextureId = object_manager_get_loaded_object_entry_index(ObjectEntryDescriptor(edgeTexture));
+    auto floorTextureId = objectManager.GetLoadedObjectEntryIndex(ObjectEntryDescriptor(floorTexture));
+    auto edgeTextureId = objectManager.GetLoadedObjectEntryIndex(ObjectEntryDescriptor(edgeTexture));
 
     map_clear_all_elements();
 
@@ -193,7 +209,7 @@ void mapgen_generate(mapgen_settings* settings)
     mapgen_smooth_height(2 + (util_rand() % 6));
 
     // Set the game map to the height map
-    mapgen_set_height();
+    mapgen_set_height(settings);
     delete[] _height;
 
     // Set the tile slopes so that there are no cliffs
@@ -205,20 +221,19 @@ void mapgen_generate(mapgen_settings* settings)
     mapgen_set_water_level(waterLevel);
 
     // Add sandy beaches
-    std::string beachTexture = std::string(floorTexture);
-    if (settings->floor == -1 && floorTexture == "rct2.terrain_surface.grass")
+    std::string_view beachTexture = floorTexture;
+    if (settings->floor == -1 && floorTexture == "rct2.terrain_surface.grass" && (util_rand() & 1))
     {
-        switch (util_rand() % 4)
-        {
-            case 0:
-                beachTexture = "rct2.terrain_surface.sand";
-                break;
-            case 1:
-                beachTexture = "rct2.terrain_surface.sand_brown";
-                break;
-        }
+        std::vector<std::string_view> availableBeachTextures;
+        if (objectManager.GetLoadedObject(ObjectEntryDescriptor("rct2.terrain_surface.sand")) != nullptr)
+            availableBeachTextures.push_back("rct2.terrain_surface.sand");
+        if (objectManager.GetLoadedObject(ObjectEntryDescriptor("rct2.terrain_surface.sand_brown")) != nullptr)
+            availableBeachTextures.push_back("rct2.terrain_surface.sand_brown");
+
+        if (!availableBeachTextures.empty())
+            beachTexture = availableBeachTextures[util_rand() % availableBeachTextures.size()];
     }
-    auto beachTextureId = object_manager_get_loaded_object_entry_index(ObjectEntryDescriptor(beachTexture));
+    auto beachTextureId = objectManager.GetLoadedObjectEntryIndex(ObjectEntryDescriptor(beachTexture));
 
     for (auto y = 1; y < mapSize - 1; y++)
     {
@@ -446,7 +461,7 @@ static void mapgen_smooth_height(int32_t iterations)
 /**
  * Sets the height of the actual game map tiles to the height map.
  */
-static void mapgen_set_height()
+static void mapgen_set_height(mapgen_settings* settings)
 {
     int32_t x, y, heightX, heightY, mapSize;
 
@@ -469,6 +484,11 @@ static void mapgen_set_height()
             if (surfaceElement == nullptr)
                 continue;
             surfaceElement->base_height = std::max(2, baseHeight * 2);
+
+            // If base height is below water level, lower it to create more natural shorelines
+            if (surfaceElement->base_height >= 4 && surfaceElement->base_height <= settings->water_level)
+                surfaceElement->base_height -= 2;
+
             surfaceElement->clearance_height = surfaceElement->base_height;
 
             uint8_t currentSlope = surfaceElement->GetSlope();
