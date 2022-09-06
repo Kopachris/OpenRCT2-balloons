@@ -11,6 +11,7 @@
 
 #include "../Context.h"
 #include "../ParkImporter.h"
+#include "../audio/audio.h"
 #include "../core/Console.hpp"
 #include "../core/Memory.hpp"
 #include "../localisation/StringIds.h"
@@ -139,7 +140,7 @@ public:
     ObjectList GetLoadedObjects() override
     {
         ObjectList objectList;
-        for (auto objectType = ObjectType::Ride; objectType < ObjectType::Count; objectType++)
+        for (auto objectType : ObjectTypes)
         {
             auto maxObjectsOfType = static_cast<ObjectEntryIndex>(object_entry_group_counts[EnumValue(objectType)]);
             for (ObjectEntryIndex i = 0; i < maxObjectsOfType; i++)
@@ -238,6 +239,10 @@ public:
         }
         UpdateSceneryGroupIndexes();
         ResetTypeToRideEntryIndexMap();
+
+        // We will need to replay the title music if the title music object got reloaded
+        OpenRCT2::Audio::StopTitleMusic();
+        OpenRCT2::Audio::PlayTitleMusic();
     }
 
     std::vector<const ObjectRepositoryItem*> GetPackableObjects() override
@@ -247,7 +252,7 @@ public:
         for (size_t i = 0; i < numObjects; i++)
         {
             const ObjectRepositoryItem* item = &_objectRepository.GetObjects()[i];
-            if (item->LoadedObject != nullptr && IsObjectCustom(item) && item->LoadedObject->GetLegacyData() != nullptr)
+            if (item->LoadedObject != nullptr && IsObjectCustom(item))
             {
                 objects.push_back(item);
             }
@@ -255,7 +260,7 @@ public:
         return objects;
     }
 
-    static rct_string_id GetObjectSourceGameString(const ObjectSourceGame sourceGame)
+    static StringId GetObjectSourceGameString(const ObjectSourceGame sourceGame)
     {
         switch (sourceGame)
         {
@@ -278,7 +283,7 @@ public:
         }
     }
 
-    const std::vector<ObjectEntryIndex>& GetAllRideEntries(uint8_t rideType) override
+    const std::vector<ObjectEntryIndex>& GetAllRideEntries(ride_type_t rideType) override
     {
         if (rideType >= RIDE_TYPE_COUNT)
         {
@@ -485,7 +490,7 @@ private:
 
         // HACK Scenery window will lose its tabs after changing the scenery group indexing
         //      for now just close it, but it will be better to later tell it to invalidate the tabs
-        window_close_by_class(WC_SCENERY);
+        window_close_by_class(WindowClass::Scenery);
     }
 
     ObjectEntryIndex GetPrimarySceneryGroupEntryIndex(Object* loadedObject)
@@ -507,7 +512,7 @@ private:
         std::vector<ObjectToLoad> requiredObjects;
         std::vector<ObjectEntryDescriptor> missingObjects;
 
-        for (auto objectType = ObjectType::Ride; objectType < ObjectType::Count; objectType++)
+        for (auto objectType : ObjectTypes)
         {
             auto& descriptors = objectList.GetList(objectType);
             auto maxSize = static_cast<size_t>(object_entry_group_counts[EnumValue(objectType)]);
@@ -766,7 +771,7 @@ void object_manager_unload_all_objects()
     objectManager.UnloadAllTransient();
 }
 
-rct_string_id object_manager_get_source_game_string(const ObjectSourceGame sourceGame)
+StringId object_manager_get_source_game_string(const ObjectSourceGame sourceGame)
 {
     return ObjectManager::GetObjectSourceGameString(sourceGame);
 }

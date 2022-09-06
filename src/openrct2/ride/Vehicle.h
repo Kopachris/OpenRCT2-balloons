@@ -28,7 +28,7 @@ using track_type_t = uint16_t;
 
 struct Ride;
 struct rct_ride_entry;
-struct rct_ride_entry_vehicle;
+struct CarEntry;
 class DataSerialiser;
 struct paint_session;
 
@@ -109,7 +109,7 @@ struct Vehicle : EntityBase
     int32_t acceleration;
     RideId ride;
     uint8_t vehicle_type;
-    rct_vehicle_colour colours;
+    VehicleColour colours;
     union
     {
         uint16_t track_progress;
@@ -204,7 +204,6 @@ struct Vehicle : EntityBase
     MiniGolfAnimation mini_golf_current_animation;
     uint8_t mini_golf_flags;
     ObjectEntryIndex ride_subtype;
-    uint8_t colours_extended;
     uint8_t seat_rotation;
     uint8_t target_seat_rotation;
     CoordsXY BoatLocation;
@@ -228,7 +227,7 @@ struct Vehicle : EntityBase
     void SetMapToolbar() const;
     int32_t IsUsedInPairs() const;
     rct_ride_entry* GetRideEntry() const;
-    rct_ride_entry_vehicle* Entry() const;
+    CarEntry* Entry() const;
     Ride* GetRide() const;
     Vehicle* TrainHead() const;
     Vehicle* TrainTail() const;
@@ -273,6 +272,9 @@ struct Vehicle : EntityBase
     void Serialise(DataSerialiser& stream);
     void Paint(paint_session& session, int32_t imageDirection) const;
 
+    friend void UpdateRotatingDefault(Vehicle& vehicle);
+    friend void UpdateRotatingEnterprise(Vehicle& vehicle);
+
 private:
     bool SoundCanPlay() const;
     uint16_t GetSoundPriority() const;
@@ -312,8 +314,7 @@ private:
     void UpdateDepartingBoatHire();
     void UpdateTravellingBoatHireSetup();
     void UpdateBoatLocation();
-    void UpdateArrivingPassThroughStation(
-        const Ride& curRide, const rct_ride_entry_vehicle& vehicleEntry, bool stationBrakesWork);
+    void UpdateArrivingPassThroughStation(const Ride& curRide, const CarEntry& carEntry, bool stationBrakesWork);
     void UpdateArriving();
     void UpdateUnloadingPassengers();
     void UpdateWaitingForCableLift();
@@ -331,10 +332,9 @@ private:
     void UpdateAdditionalAnimation();
     void CheckIfMissing();
     bool CurrentTowerElementIsTop();
-    bool UpdateTrackMotionForwards(rct_ride_entry_vehicle* vehicleEntry, Ride* curRide, rct_ride_entry* rideEntry);
-    bool UpdateTrackMotionBackwards(rct_ride_entry_vehicle* vehicleEntry, Ride* curRide, rct_ride_entry* rideEntry);
-    int32_t UpdateTrackMotionPoweredRideAcceleration(
-        rct_ride_entry_vehicle* vehicleEntry, uint32_t totalMass, const int32_t curAcceleration);
+    bool UpdateTrackMotionForwards(CarEntry* carEntry, Ride* curRide, rct_ride_entry* rideEntry);
+    bool UpdateTrackMotionBackwards(CarEntry* carEntry, Ride* curRide, rct_ride_entry* rideEntry);
+    int32_t UpdateTrackMotionPoweredRideAcceleration(CarEntry* carEntry, uint32_t totalMass, const int32_t curAcceleration);
     int32_t NumPeepsUntilTrainTail() const;
     void InvalidateWindow();
     void TestReset();
@@ -361,9 +361,9 @@ private:
     void KillAllPassengersInTrain();
     void KillPassengers(Ride* curRide);
     void TrainReadyToDepart(uint8_t num_peeps_on_train, uint8_t num_used_seats);
-    int32_t UpdateTrackMotionMiniGolfCalculateAcceleration(const rct_ride_entry_vehicle& vehicleEntry);
+    int32_t UpdateTrackMotionMiniGolfCalculateAcceleration(const CarEntry& carEntry);
     int32_t UpdateTrackMotionMiniGolf(int32_t* outStation);
-    void UpdateTrackMotionMiniGolfVehicle(Ride* curRide, rct_ride_entry* rideEntry, rct_ride_entry_vehicle* vehicleEntry);
+    void UpdateTrackMotionMiniGolfVehicle(Ride* curRide, rct_ride_entry* rideEntry, CarEntry* carEntry);
     bool UpdateTrackMotionForwardsGetNewTrack(uint16_t trackType, Ride* curRide, rct_ride_entry* rideEntry);
     bool UpdateTrackMotionBackwardsGetNewTrack(uint16_t trackType, Ride* curRide, uint16_t* progress);
     bool UpdateMotionCollisionDetection(const CoordsXYZ& loc, EntityId* otherVehicleIndex);
@@ -375,6 +375,9 @@ private:
     int32_t CalculateRiderBraking() const;
 };
 static_assert(sizeof(Vehicle) <= 512);
+
+void UpdateRotatingDefault(Vehicle& vehicle);
+void UpdateRotatingEnterprise(Vehicle& vehicle);
 
 struct train_ref
 {
@@ -418,17 +421,17 @@ enum class MiniGolfAnimation : uint8_t
 
 enum
 {
-    VEHICLE_ENTRY_ANIMATION_NONE,
-    VEHICLE_ENTRY_ANIMATION_MINITURE_RAILWAY_LOCOMOTIVE,
-    VEHICLE_ENTRY_ANIMATION_SWAN,
-    VEHICLE_ENTRY_ANIMATION_CANOES,
-    VEHICLE_ENTRY_ANIMATION_ROW_BOATS,
-    VEHICLE_ENTRY_ANIMATION_WATER_TRICYCLES,
-    VEHICLE_ENTRY_ANIMATION_OBSERVATION_TOWER,
-    VEHICLE_ENTRY_ANIMATION_HELICARS,
-    VEHICLE_ENTRY_ANIMATION_MONORAIL_CYCLES,
-    VEHICLE_ENTRY_ANIMATION_MULTI_DIM_COASTER,
-    VEHICLE_ENTRY_ANIMATION_ANIMAL_FLYING // OpenRCT2-specific feature
+    CAR_ENTRY_ANIMATION_NONE,
+    CAR_ENTRY_ANIMATION_MINITURE_RAILWAY_LOCOMOTIVE,
+    CAR_ENTRY_ANIMATION_SWAN,
+    CAR_ENTRY_ANIMATION_CANOES,
+    CAR_ENTRY_ANIMATION_ROW_BOATS,
+    CAR_ENTRY_ANIMATION_WATER_TRICYCLES,
+    CAR_ENTRY_ANIMATION_OBSERVATION_TOWER,
+    CAR_ENTRY_ANIMATION_HELICARS,
+    CAR_ENTRY_ANIMATION_MONORAIL_CYCLES,
+    CAR_ENTRY_ANIMATION_MULTI_DIM_COASTER,
+    CAR_ENTRY_ANIMATION_ANIMAL_FLYING // OpenRCT2-specific feature
 };
 
 enum : uint32_t
@@ -523,6 +526,10 @@ enum
 Vehicle* try_get_vehicle(EntityId spriteIndex);
 void vehicle_update_all();
 void vehicle_sounds_update();
+
+void RideUpdateMeasurementsSpecialElements_Default(Ride* ride, const track_type_t trackType);
+void RideUpdateMeasurementsSpecialElements_MiniGolf(Ride* ride, const track_type_t trackType);
+void RideUpdateMeasurementsSpecialElements_WaterCoaster(Ride* ride, const track_type_t trackType);
 
 extern Vehicle* gCurrentVehicle;
 extern StationIndex _vehicleStationIndex;

@@ -222,7 +222,7 @@ namespace Config
             model->invisible_trees = reader->GetBoolean("invisible_trees", false);
             model->invisible_scenery = reader->GetBoolean("invisible_scenery", false);
             model->invisible_paths = reader->GetBoolean("invisible_paths", false);
-            model->invisible_supports = reader->GetBoolean("invisible_supports", false);
+            model->invisible_supports = reader->GetBoolean("invisible_supports", true);
 
             model->last_version_check_time = reader->GetInt64("last_version_check_time", 0);
         }
@@ -357,7 +357,7 @@ namespace Config
         if (reader->ReadSection("sound"))
         {
             auto model = &gConfigSound;
-            model->device = reader->GetCString("audio_device", nullptr);
+            model->device = reader->GetString("audio_device", "");
             model->master_sound_enabled = reader->GetBoolean("master_sound", true);
             model->master_volume = reader->GetInt32("master_volume", 100);
             model->title_music = static_cast<TitleMusicKind>(reader->GetInt32("title_music", EnumValue(TitleMusicKind::Rct2)));
@@ -755,7 +755,8 @@ namespace Config
             return false;
         }
         int32_t exit_status = Platform::Execute(
-            String::Format("%s '%s' --exclude-temp --output-dir '%s'", path.c_str(), installerPath.c_str(), targetPath.c_str()),
+            String::StdFormat(
+                "%s '%s' --exclude-temp --output-dir '%s'", path.c_str(), installerPath.c_str(), targetPath.c_str()),
             &output);
         log_info("Exit status %d", exit_status);
         return exit_status == 0;
@@ -802,7 +803,6 @@ void config_release()
     SafeFree(gConfigGeneral.custom_currency_symbol);
     SafeFree(gConfigInterface.current_theme_preset);
     SafeFree(gConfigInterface.current_title_sequence_preset);
-    SafeFree(gConfigSound.device);
     SafeFree(gConfigFonts.file_name);
     SafeFree(gConfigFonts.font_name);
 }

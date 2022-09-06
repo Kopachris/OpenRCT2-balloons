@@ -64,13 +64,13 @@ set(TITLE_SEQUENCE_VERSION "0.4.0")
 set(TITLE_SEQUENCE_URL  "https://github.com/OpenRCT2/title-sequences/releases/download/v${TITLE_SEQUENCE_VERSION}/title-sequences.zip")
 set(TITLE_SEQUENCE_SHA1 "4ab0065e5a4d9f9c77d94718bbdfcfcd5a389da0")
 
-set(OBJECTS_VERSION "1.3.0")
+set(OBJECTS_VERSION "1.3.4")
 set(OBJECTS_URL  "https://github.com/OpenRCT2/objects/releases/download/v${OBJECTS_VERSION}/objects.zip")
-set(OBJECTS_SHA1 "855767cc495c615193848d2e191ded89b0477bc8")
+set(OBJECTS_SHA1 "93305caaf3d9da50516da4c69234c6031dd35808")
 
-set(REPLAYS_VERSION "0.0.67")
+set(REPLAYS_VERSION "0.0.69")
 set(REPLAYS_URL  "https://github.com/OpenRCT2/replays/releases/download/v${REPLAYS_VERSION}/replays.zip")
-set(REPLAYS_SHA1 "0CA2DB3BEE021F0402D3E0F0E9EDB142CCEAFFC6")
+set(REPLAYS_SHA1 "3EC20AA2C90FDEEB08C26B6DA6D111C9C5C9B694")
 
 option(FORCE32 "Force 32-bit build. It will add `-m32` to compiler flags.")
 option(WITH_TESTS "Build tests")
@@ -94,11 +94,7 @@ option(DISABLE_GOOGLE_BENCHMARK "Disable Google Benchmarks support." OFF)
 option(DISABLE_HTTP "Disable HTTP support.")
 option(DISABLE_NETWORK "Disable multiplayer functionality. Mainly for testing.")
 option(DISABLE_TTF "Disable support for TTF provided by freetype2.")
-option(ENABLE_LIGHTFX "Enable lighting effects." ON)
 option(ENABLE_SCRIPTING "Enable script / plugin support." ON)
-if (MINGW)
-    option(MINGW_TARGET_NT5_1 "Use only NT5.1 APIs and libraries." OFF)
-endif ()
 
 option(DISABLE_GUI "Don't build GUI. (Headless only.)")
 
@@ -106,13 +102,6 @@ if (FORCE32)
     set(TARGET_M "-m32")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TARGET_M}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${TARGET_M}")
-endif ()
-
-if (MINGW_TARGET_NT5_1)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_WIN32_WINNT=0x501")
-	if (STATIC)
-	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCURL_STATICLIB=1 -DZIP_STATIC=1 -static")
-	endif ()
 endif ()
 
 if (PORTABLE OR WIN32)
@@ -128,9 +117,9 @@ if (MACOS_USE_DEPENDENCIES)
     # if we're building on macOS, then we need the dependencies
     include(cmake/download.cmake)
     
-    set(MACOS_DYLIBS_VERSION "31")
+    set(MACOS_DYLIBS_VERSION "33")
     set(MACOS_DYLIBS_ZIPFILE "openrct2-libs-v${MACOS_DYLIBS_VERSION}-universal-macos-dylibs.zip")
-    set(MACOS_DYLIBS_SHA1 "b1162cf91cd98949f88edd8aa22102fc82f1c6f4")
+    set(MACOS_DYLIBS_SHA1 "8b47f3a3603f3ad3a1ee292033d0daffe9a3e43c")
     set(MACOS_DYLIBS_DIR "${ROOT_DIR}/lib/macos")
     set(MACOS_DYLIBS_URL "https://github.com/OpenRCT2/Dependencies/releases/download/v${MACOS_DYLIBS_VERSION}/${MACOS_DYLIBS_ZIPFILE}")
 
@@ -381,9 +370,6 @@ endif ()
 if (DISABLE_TTF)
     target_compile_options(libopenrct2 PUBLIC -DNO_TTF)
 endif ()
-if (ENABLE_LIGHTFX)
-    target_compile_options(libopenrct2 PUBLIC -D__ENABLE_LIGHTFX__)
-endif ()
 if (ENABLE_SCRIPTING)
     target_compile_options(libopenrct2 PUBLIC -DENABLE_SCRIPTING)
 endif ()
@@ -393,7 +379,7 @@ endif ()
 if (NOT (MACOS_BUNDLE AND (NOT CMAKE_OSX_ARCHITECTURES MATCHES "${SYSTEM_MACOS_ARCH}")))
     add_custom_command(
         OUTPUT g2.dat
-        COMMAND ./openrct2-cli sprite build \"${CMAKE_BINARY_DIR}/g2.dat\" \"${ROOT_DIR}/resources/g2/sprites.json\"
+        COMMAND ./openrct2-cli sprite build ${CMAKE_BINARY_DIR}/g2.dat ${ROOT_DIR}/resources/g2/sprites.json
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
     add_custom_target(g2 DEPENDS ${PROJECT_NAME} g2.dat)

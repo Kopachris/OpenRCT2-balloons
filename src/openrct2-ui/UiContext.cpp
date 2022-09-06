@@ -31,6 +31,7 @@
 #include <openrct2/Context.h>
 #include <openrct2/Input.h>
 #include <openrct2/Version.h>
+#include <openrct2/audio/AudioContext.h>
 #include <openrct2/audio/AudioMixer.h>
 #include <openrct2/config/Config.h>
 #include <openrct2/core/String.hpp>
@@ -64,8 +65,8 @@ class UiContext final : public IUiContext
 private:
     constexpr static uint32_t TOUCH_DOUBLE_TIMEOUT = 300;
 
-    IPlatformUiContext* const _platformUiContext;
-    IWindowManager* const _windowManager;
+    const std::unique_ptr<IPlatformUiContext> _platformUiContext;
+    const std::unique_ptr<IWindowManager> _windowManager;
 
     CursorRepository _cursorRepository;
 
@@ -125,9 +126,7 @@ public:
     ~UiContext() override
     {
         UiContext::CloseWindow();
-        delete _windowManager;
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
-        delete _platformUiContext;
     }
 
     void Initialise() override
@@ -145,7 +144,7 @@ public:
 
     void Draw(rct_drawpixelinfo* dpi) override
     {
-        auto bgColour = ThemeGetColour(WC_CHAT, 0);
+        auto bgColour = ThemeGetColour(WindowClass::Chat, 0);
         chat_draw(dpi, bgColour);
         _inGameConsole.Draw(dpi);
     }
@@ -338,23 +337,6 @@ public:
                     context_quit();
                     break;
                 case SDL_WINDOWEVENT:
-                    // HACK: Fix #2158, OpenRCT2 does not draw if it does not think that the window is
-                    //                  visible - due a bug in SDL 2.0.3 this hack is required if the
-                    //                  window is maximised, minimised and then restored again.
-                    if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-                    {
-                        if (SDL_GetWindowFlags(_window) & SDL_WINDOW_MAXIMIZED)
-                        {
-                            SDL_RestoreWindow(_window);
-                            SDL_MaximizeWindow(_window);
-                        }
-                        if ((SDL_GetWindowFlags(_window) & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP)
-                        {
-                            SDL_RestoreWindow(_window);
-                            SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-                        }
-                    }
-
                     if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
                     {
                         OnResize(e.window.data1, e.window.data2);
@@ -382,11 +364,11 @@ public:
                     {
                         if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
                         {
-                            Mixer_SetVolume(1);
+                            SetAudioVolume(1);
                         }
                         if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
                         {
-                            Mixer_SetVolume(0);
+                            SetAudioVolume(0);
                         }
                     }
                     break;
@@ -658,6 +640,30 @@ public:
         _platformUiContext->ShowMessageBox(_window, message);
     }
 
+    int32_t ShowMessageBox(
+        const std::string& title, const std::string& message, const std::vector<std::string>& options) override
+    {
+        auto message_box_button_data = std::make_unique<SDL_MessageBoxButtonData[]>(options.size());
+        for (size_t i = 0; i < options.size(); i++)
+        {
+            message_box_button_data[i].buttonid = static_cast<int>(i);
+            message_box_button_data[i].text = options[i].c_str();
+        }
+
+        SDL_MessageBoxData message_box_data{};
+        message_box_data.window = _window;
+        message_box_data.title = title.c_str();
+        message_box_data.message = message.c_str();
+        message_box_data.numbuttons = static_cast<int>(options.size());
+        message_box_data.buttons = message_box_button_data.get();
+
+        int buttonid{};
+
+        SDL_ShowMessageBox(&message_box_data, &buttonid);
+
+        return buttonid;
+    }
+
     bool HasMenuSupport() override
     {
         return _platformUiContext->HasMenuSupport();
@@ -695,7 +701,7 @@ public:
 
     IWindowManager* GetWindowManager() override
     {
-        return _windowManager;
+        return _windowManager.get();
     }
 
     bool SetClipboardText(const utf8* target) override
@@ -709,7 +715,7 @@ public:
         {
             auto context = GetContext();
             auto gameState = context->GetGameState();
-            _titleSequencePlayer = CreateTitleSequencePlayer(*gameState);
+            _titleSequencePlayer = OpenRCT2::Title::CreateTitleSequencePlayer(*gameState);
         }
         return _titleSequencePlayer.get();
     }
@@ -985,6 +991,16 @@ private:
         }
 
         return ie;
+    }
+
+    void SetAudioVolume(float value)
+    {
+        auto audioContext = GetContext()->GetAudioContext();
+        auto mixer = audioContext->GetMixer();
+        if (mixer != nullptr)
+        {
+            mixer->SetVolume(value);
+        }
     }
 };
 

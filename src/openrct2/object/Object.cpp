@@ -28,11 +28,6 @@
 
 using namespace OpenRCT2;
 
-ObjectType& operator++(ObjectType& d, int)
-{
-    return d = (d == ObjectType::Count) ? ObjectType::Ride : static_cast<ObjectType>(static_cast<uint8_t>(d) + 1);
-}
-
 ObjectEntryDescriptor::ObjectEntryDescriptor(const rct_object_entry& newEntry)
 {
     if (!newEntry.IsEmpty())
@@ -117,15 +112,6 @@ void Object::PopulateTablesFromJson(IReadObjectContext* context, json_t& root)
 {
     _stringTable.ReadJson(root);
     _usesFallbackImages = _imageTable.ReadJson(context, root);
-}
-
-rct_object_entry Object::ParseObjectEntry(const std::string& s)
-{
-    rct_object_entry entry = {};
-    std::fill_n(entry.name, sizeof(entry.name), ' ');
-    auto copyLen = std::min<size_t>(8, s.size());
-    std::copy_n(s.c_str(), copyLen, entry.name);
-    return entry;
 }
 
 std::string Object::GetOverrideString(uint8_t index) const

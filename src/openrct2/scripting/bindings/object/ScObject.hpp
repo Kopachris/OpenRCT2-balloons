@@ -19,6 +19,7 @@
 #    include "../../Duktape.hpp"
 #    include "../../ScriptEngine.h"
 
+#    include <memory>
 #    include <optional>
 
 namespace OpenRCT2::Scripting
@@ -331,7 +332,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetEntry();
             if (entry != nullptr)
             {
-                return entry->no_vehicle_images;
+                return entry->NumCarImages;
             }
             return 0;
         }
@@ -381,7 +382,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetEntry();
             if (entry != nullptr)
             {
-                return entry->log_flume_reverser_vehicle_type;
+                return entry->ReversedCarIndex;
             }
             return 0;
         }
@@ -472,15 +473,15 @@ namespace OpenRCT2::Scripting
             return static_cast<RideObject*>(objManager.GetLoadedObject(_objectType, _objectIndex));
         }
 
-        const rct_ride_entry_vehicle* GetEntry() const
+        const CarEntry* GetEntry() const
         {
             auto obj = GetObject();
             if (obj != nullptr)
             {
                 auto rideEntry = static_cast<rct_ride_entry*>(obj->GetLegacyData());
-                if (rideEntry != nullptr && _vehicleIndex < std::size(rideEntry->vehicles))
+                if (rideEntry != nullptr && _vehicleIndex < std::size(rideEntry->Cars))
                 {
-                    return rideEntry->GetVehicle(_vehicleIndex);
+                    return rideEntry->GetCar(_vehicleIndex);
                 }
             }
             return nullptr;
@@ -622,7 +623,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetLegacyData();
             if (entry != nullptr)
             {
-                return entry->tab_vehicle;
+                return entry->TabCar;
             }
             return 0;
         }
@@ -632,7 +633,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetLegacyData();
             if (entry != nullptr)
             {
-                return entry->default_vehicle;
+                return entry->DefaultCar;
             }
             return 0;
         }
@@ -642,7 +643,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetLegacyData();
             if (entry != nullptr)
             {
-                return entry->front_vehicle;
+                return entry->FrontCar;
             }
             return 0;
         }
@@ -652,7 +653,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetLegacyData();
             if (entry != nullptr)
             {
-                return entry->second_vehicle;
+                return entry->SecondCar;
             }
             return 0;
         }
@@ -662,7 +663,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetLegacyData();
             if (entry != nullptr)
             {
-                return entry->rear_vehicle;
+                return entry->RearCar;
             }
             return 0;
         }
@@ -672,7 +673,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetLegacyData();
             if (entry != nullptr)
             {
-                return entry->third_vehicle;
+                return entry->ThirdCar;
             }
             return 0;
         }
@@ -683,7 +684,7 @@ namespace OpenRCT2::Scripting
             auto entry = GetLegacyData();
             if (entry != nullptr)
             {
-                for (size_t i = 0; i < std::size(entry->vehicles); i++)
+                for (size_t i = 0; i < std::size(entry->Cars); i++)
                 {
                     result.push_back(std::make_shared<ScRideObjectVehicle>(static_cast<ObjectType>(_type), _index, i));
                 }

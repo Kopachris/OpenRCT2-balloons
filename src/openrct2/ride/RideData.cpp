@@ -33,6 +33,7 @@
 #include "coaster/meta/AlpineCoaster.h"
 #include "coaster/meta/BobsleighCoaster.h"
 #include "coaster/meta/ClassicMiniRollerCoaster.h"
+#include "coaster/meta/ClassicWoodenRollerCoaster.h"
 #include "coaster/meta/CompactInvertedCoaster.h"
 #include "coaster/meta/CorkscrewRollerCoaster.h"
 #include "coaster/meta/FlyingRollerCoaster.h"
@@ -123,7 +124,7 @@ using namespace OpenRCT2::Entity::Yaw;
 
 // clang-format off
 
-const rct_ride_entry_vehicle CableLiftVehicle = {
+const CarEntry CableLiftVehicle = {
     /* .TabRotationMask = */ 31,
     /* .spacing = */ 0,
     /* .car_mass = */ 0,
@@ -158,10 +159,17 @@ const rct_ride_entry_vehicle CableLiftVehicle = {
     /* .SpriteGroups[Slopes25Banked22] = */ 0, SpritePrecision::None,
     /* .SpriteGroups[Slopes25Banked45] = */ 0, SpritePrecision::None,
     /* .SpriteGroups[Slopes12Banked45] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes25Banked67] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes25Banked90] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes25InlineTwists] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes42Banked22] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes42Banked45] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes42Banked67] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes42Banked90] = */ 0, SpritePrecision::None,
+    /* .SpriteGroups[Slopes60Banked22] = */ 0, SpritePrecision::None,
     /* .SpriteGroups[Corkscrews] = */ 0, SpritePrecision::None,
     /* .SpriteGroups[RestraintAnimation] = */ 0, SpritePrecision::None,
     /* .SpriteGroups[CurvedLiftHill] = */ 0, SpritePrecision::None,
-
     /* .no_vehicle_images = */ 0,
     /* .no_seating_rows = */ 0,
     /* .spinning_inertia = */ 0,
@@ -186,7 +194,7 @@ const uint16_t RideFilmLength[3] = {
     7000, // SPACE_RAIDERS
 };
 
-const rct_string_id RideModeNames[] = {
+const StringId RideModeNames[] = {
         STR_RIDE_MODE_NORMAL,
         STR_RIDE_MODE_CONTINUOUS_CIRCUIT,
         STR_RIDE_MODE_REVERSE_INCLINE_LAUNCHED_SHUTTLE,
@@ -327,6 +335,7 @@ constexpr const RideTypeDescriptor RideTypeDescriptors[RIDE_TYPE_COUNT] = {
     /* RIDE_TYPE_HYBRID_COASTER                     */ HybridCoasterRTD,
     /* RIDE_TYPE_SINGLE_RAIL_ROLLER_COASTER         */ SingleRailRollerCoasterRTD,
     /* RIDE_TYPE_ALPINE_COASTER                     */ AlpineCoasterRTD,
+    /* RIDE_TYPE_CLASSIC_WOODEN_ROLLER_COASTER      */ ClassicWoodenRollerCoasterRTD,
 };
 
 bool RideTypeDescriptor::HasFlag(uint64_t flag) const
@@ -367,6 +376,11 @@ ResearchCategory RideTypeDescriptor::GetResearchCategory() const
     }
     log_error("Cannot get Research Category of invalid RideCategory");
     return ResearchCategory::Transport;
+}
+
+bool RideTypeDescriptor::SupportsRideMode(RideMode rideMode) const
+{
+    return RideModes & EnumToFlag(rideMode);
 }
 
 static RideTrackGroup _enabledRidePieces = {};

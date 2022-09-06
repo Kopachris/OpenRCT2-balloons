@@ -39,7 +39,7 @@
   <Import Project="..\..\openrct2.common.props" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>__ENABLE_DISCORD__;__ENABLE_LIGHTFX__;USE_BENCHMARK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__ENABLE_DISCORD__;USE_BENCHMARK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Breakpad)'=='true' and ('$(Platform)'=='Win32' or '$(Platform)'=='x64')">USE_BREAKPAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='Win32' or '$(Platform)'=='x64'">USE_FRIBIDI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -106,6 +106,7 @@
     <ClInclude Include="actions\PlacePeepSpawnAction.h" />
     <ClInclude Include="actions\PlayerKickAction.h" />
     <ClInclude Include="actions\PlayerSetGroupAction.h" />
+    <ClInclude Include="actions\ResultWithMessage.h" />
     <ClInclude Include="actions\RideCreateAction.h" />
     <ClInclude Include="actions\RideDemolishAction.h" />
     <ClInclude Include="actions\RideEntranceExitPlaceAction.h" />
@@ -248,6 +249,7 @@
     <ClInclude Include="interface\Viewport.h" />
     <ClInclude Include="interface\Widget.h" />
     <ClInclude Include="interface\Window.h" />
+    <ClInclude Include="interface\WindowClasses.h" />
     <ClInclude Include="interface\Window_internal.h" />
     <ClInclude Include="interface\ZoomLevel.h" />
     <ClInclude Include="Intro.h" />
@@ -353,6 +355,7 @@
     <ClInclude Include="ride\coaster\meta\AlpineCoaster.h" />
     <ClInclude Include="ride\coaster\meta\BobsleighCoaster.h" />
     <ClInclude Include="ride\coaster\meta\ClassicMiniRollerCoaster.h" />
+    <ClInclude Include="ride\coaster\meta\ClassicWoodenRollerCoaster.h" />
     <ClInclude Include="ride\coaster\meta\CompactInvertedCoaster.h" />
     <ClInclude Include="ride\coaster\meta\CorkscrewRollerCoaster.h" />
     <ClInclude Include="ride\coaster\meta\FlyingRollerCoaster.h" />
@@ -389,6 +392,8 @@
     <ClInclude Include="ride\coaster\meta\WaterCoaster.h" />
     <ClInclude Include="ride\coaster\meta\WoodenRollerCoaster.h" />
     <ClInclude Include="ride\coaster\meta\WoodenWildMouse.h" />
+    <ClInclude Include="ride\coaster\WoodenRollerCoaster.h" />
+    <ClInclude Include="ride\gentle\Maze.h" />
     <ClInclude Include="ride\gentle\meta\CarRide.h" />
     <ClInclude Include="ride\gentle\meta\Circus.h" />
     <ClInclude Include="ride\gentle\meta\CrookedHouse.h" />
@@ -497,6 +502,16 @@
     <ClInclude Include="scripting\bindings\world\ScTile.hpp" />
     <ClInclude Include="sprites.h" />
     <ClInclude Include="System.hpp" />
+    <ClInclude Include="title\Command\End.h" />
+    <ClInclude Include="title\Command\FollowEntity.h" />
+    <ClInclude Include="title\Command\LoadPark.h" />
+    <ClInclude Include="title\Command\LoadScenario.h" />
+    <ClInclude Include="title\Command\Restart.h" />
+    <ClInclude Include="title\Command\RotateView.h" />
+    <ClInclude Include="title\Command\SetLocation.h" />
+    <ClInclude Include="title\Command\SetSpeed.h" />
+    <ClInclude Include="title\Command\SetZoom.h" />
+    <ClInclude Include="title\Command\Wait.h" />
     <ClInclude Include="title\TitleScreen.h" />
     <ClInclude Include="title\TitleSequence.h" />
     <ClInclude Include="title\TitleSequenceManager.h" />
@@ -556,7 +571,6 @@
     <ClCompile Include="actions\FootpathPlaceFromTrackAction.cpp" />
     <ClCompile Include="actions\FootpathRemoveAction.cpp" />
     <ClCompile Include="actions\GameAction.cpp" />
-    <ClCompile Include="actions\GameActionCompat.cpp" />
     <ClCompile Include="actions\GameActionRegistry.cpp" />
     <ClCompile Include="actions\GameActionResult.cpp" />
     <ClCompile Include="actions\GuestSetFlagsAction.cpp" />
@@ -626,7 +640,6 @@
     <ClCompile Include="actions\WaterRaiseAction.cpp" />
     <ClCompile Include="actions\WaterSetHeightAction.cpp" />
     <ClCompile Include="audio\Audio.cpp" />
-    <ClCompile Include="audio\AudioMixer.cpp" />
     <ClCompile Include="audio\DummyAudioContext.cpp" />
     <ClCompile Include="Cheats.cpp" />
     <ClCompile Include="CmdlineSprite.cpp" />
@@ -635,6 +648,7 @@
     <ClCompile Include="cmdline/BenchUpdate.cpp" />
     <ClCompile Include="cmdline\CommandLine.cpp" />
     <ClCompile Include="cmdline\ConvertCommand.cpp" />
+    <ClCompile Include="cmdline\ParkInfoCommands.cpp" />
     <ClCompile Include="cmdline\RootCommands.cpp" />
     <ClCompile Include="cmdline\ScreenshotCommands.cpp" />
     <ClCompile Include="cmdline\SimulateCommands.cpp" />
@@ -831,6 +845,7 @@
     <ClCompile Include="ride\coaster\AirPoweredVerticalCoaster.cpp" />
     <ClCompile Include="ride\coaster\AlpineCoaster.cpp" />
     <ClCompile Include="ride\coaster\BobsleighCoaster.cpp" />
+    <ClCompile Include="ride\coaster\ClassicWoodenRollerCoaster.cpp" />
     <ClCompile Include="ride\coaster\CompactInvertedCoaster.cpp" />
     <ClCompile Include="ride\coaster\CorkscrewRollerCoaster.cpp" />
     <ClCompile Include="ride\coaster\FlyingRollerCoaster.cpp" />
@@ -942,6 +957,16 @@
     <ClCompile Include="scripting\HookEngine.cpp" />
     <ClCompile Include="scripting\Plugin.cpp" />
     <ClCompile Include="scripting\ScriptEngine.cpp" />
+    <ClCompile Include="title\Command\End.cpp" />
+    <ClCompile Include="title\Command\FollowEntity.cpp" />
+    <ClCompile Include="title\Command\LoadPark.cpp" />
+    <ClCompile Include="title\Command\LoadScenario.cpp" />
+    <ClCompile Include="title\Command\Restart.cpp" />
+    <ClCompile Include="title\Command\RotateView.cpp" />
+    <ClCompile Include="title\Command\SetLocation.cpp" />
+    <ClCompile Include="title\Command\SetSpeed.cpp" />
+    <ClCompile Include="title\Command\SetZoom.cpp" />
+    <ClCompile Include="title\Command\Wait.cpp" />
     <ClCompile Include="title\TitleScreen.cpp" />
     <ClCompile Include="title\TitleSequence.cpp" />
     <ClCompile Include="title\TitleSequenceManager.cpp" />

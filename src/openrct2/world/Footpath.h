@@ -47,7 +47,7 @@ enum
 #pragma pack(push, 1)
 struct rct_footpath_entry
 {
-    rct_string_id string_idx;             // 0x00
+    StringId string_idx;                  // 0x00
     uint32_t image;                       // 0x02
     uint32_t bridge_image;                // 0x06
     RailingEntrySupportType support_type; // 0x0A
@@ -82,7 +82,7 @@ assert_struct_size(rct_footpath_entry, 13);
 
 struct PathSurfaceDescriptor
 {
-    rct_string_id Name;
+    StringId Name;
     uint32_t Image;
     uint32_t PreviewImage;
     uint8_t Flags;
@@ -95,7 +95,7 @@ struct PathSurfaceDescriptor
 
 struct PathRailingsDescriptor
 {
-    rct_string_id Name;
+    StringId Name;
     uint32_t PreviewImage;
     uint32_t BridgeImage;
     uint32_t RailingsImage;
@@ -233,7 +233,6 @@ extern const CoordsXY BenchUseOffsets[NumOrthogonalDirections * 2];
 
 TileElement* map_get_footpath_element(const CoordsXYZ& coords);
 void footpath_interrupt_peeps(const CoordsXYZ& footpathPos);
-money32 footpath_remove(const CoordsXYZ& footpathLoc, int32_t flags);
 money32 footpath_provisional_set(
     ObjectEntryIndex type, ObjectEntryIndex railingsType, const CoordsXYZ& footpathLoc, int32_t slope,
     PathConstructFlags constructFlags);
@@ -253,6 +252,7 @@ bool footpath_is_blocked_by_vehicle(const TileCoordsXYZ& position);
 int32_t footpath_is_connected_to_map_edge(const CoordsXYZ& footpathPos, int32_t direction, int32_t flags);
 void footpath_remove_edges_at(const CoordsXY& footpathPos, TileElement* tileElement);
 
+bool FootpathSelectDefault();
 const FootpathObject* GetLegacyFootpathEntry(ObjectEntryIndex entryIndex);
 const FootpathSurfaceObject* GetPathSurfaceEntry(ObjectEntryIndex entryIndex);
 const FootpathRailingsObject* GetPathRailingsEntry(ObjectEntryIndex entryIndex);

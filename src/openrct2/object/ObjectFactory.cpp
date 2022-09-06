@@ -42,6 +42,7 @@
 #include "WaterObject.h"
 
 #include <algorithm>
+#include <memory>
 #include <unordered_map>
 
 struct IFileDataRetriever
@@ -501,7 +502,10 @@ namespace ObjectFactory
     std::unique_ptr<Object> CreateObjectFromJson(
         IObjectRepository& objectRepository, json_t& jRoot, const IFileDataRetriever* fileRetriever, bool loadImageTable)
     {
-        Guard::Assert(jRoot.is_object(), "ObjectFactory::CreateObjectFromJson expects parameter jRoot to be object");
+        if (!jRoot.is_object())
+        {
+            throw std::runtime_error("Object JSON root was not an object");
+        }
 
         log_verbose("CreateObjectFromJson(...)");
 

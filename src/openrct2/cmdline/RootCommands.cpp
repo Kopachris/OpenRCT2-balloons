@@ -96,7 +96,7 @@ static exitcode_t HandleCommandJoin(CommandLineArgEnumerator * enumerator);
 static exitcode_t HandleCommandSetRCT2(CommandLineArgEnumerator * enumerator);
 static exitcode_t HandleCommandScanObjects(CommandLineArgEnumerator * enumerator);
 
-#if defined(_WIN32) && _WIN32_WINNT >= 0x0600
+#if defined(_WIN32)
 
 static bool _removeShell = false;
 
@@ -133,7 +133,7 @@ const CommandLineCommand CommandLine::RootCommands[]
     DefineCommand("scan-objects", "<path>",             StandardOptions, HandleCommandScanObjects),
     DefineCommand("handle-uri", "openrct2://.../",      StandardOptions, CommandLine::HandleCommandUri),
 
-#if defined(_WIN32) && _WIN32_WINNT >= 0x0600
+#if defined(_WIN32)
     DefineCommand("register-shell", "", RegisterShellOptions, HandleCommandRegisterShell),
 #endif
 
@@ -144,6 +144,7 @@ const CommandLineCommand CommandLine::RootCommands[]
     DefineSubCommand("benchspritesort", CommandLine::BenchSpriteSortCommands  ),
     DefineSubCommand("benchsimulate",   CommandLine::BenchUpdateCommands      ),
     DefineSubCommand("simulate",        CommandLine::SimulateCommands         ),
+    DefineSubCommand("parkinfo",        CommandLine::ParkInfoCommands         ),
     CommandTableEnd
 };
 
@@ -211,12 +212,12 @@ exitcode_t CommandLine::HandleCommandDefault()
 
     if (!_rct1DataPath.empty())
     {
-        gCustomRCT1DataPath = _rct1DataPath;
+        gCustomRCT1DataPath = Path::GetAbsolute(_rct1DataPath);
     }
 
     if (!_rct2DataPath.empty())
     {
-        gCustomRCT2DataPath = _rct2DataPath;
+        gCustomRCT2DataPath = Path::GetAbsolute(_rct2DataPath);
     }
 
     if (!_password.empty())
@@ -400,7 +401,7 @@ static exitcode_t HandleCommandScanObjects([[maybe_unused]] CommandLineArgEnumer
     return EXITCODE_OK;
 }
 
-#if defined(_WIN32) && _WIN32_WINNT >= 0x0600
+#if defined(_WIN32)
 static exitcode_t HandleCommandRegisterShell([[maybe_unused]] CommandLineArgEnumerator* enumerator)
 {
     exitcode_t result = CommandLine::HandleCommandDefault();
@@ -419,7 +420,7 @@ static exitcode_t HandleCommandRegisterShell([[maybe_unused]] CommandLineArgEnum
     }
     return EXITCODE_OK;
 }
-#endif // defined(_WIN32) && _WIN32_WINNT >= 0x0600
+#endif // defined(_WIN32)
 
 static void PrintAbout()
 {
@@ -458,6 +459,13 @@ static void PrintVersion()
     Console::WriteLine();
     Console::WriteFormat("Minimum park file version: %d", OpenRCT2::PARK_FILE_MIN_VERSION);
     Console::WriteLine();
+#ifdef USE_BREAKPAD
+    Console::WriteFormat("With breakpad support enabled");
+    Console::WriteLine();
+#else
+    Console::WriteFormat("Breakpad support disabled");
+    Console::WriteLine();
+#endif
 }
 
 static void PrintLaunchInformation()
